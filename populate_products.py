@@ -1,6 +1,8 @@
 import os
 import django
 import re
+from PIL import Image
+from django.conf import settings
 
 # Set up Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pindhni.settings')
@@ -8,6 +10,29 @@ django.setup()
 
 import random
 from api.models import Product, Category, Size, Color, Material, ProductSize
+
+def ensure_placeholder_image(image_path):
+    """
+    Ensures a placeholder image exists at the given path relative to MEDIA_ROOT.
+    If not, it creates a simple placeholder image.
+    """
+    if not image_path:
+        return
+
+    full_path = os.path.join(settings.MEDIA_ROOT, image_path)
+
+    if os.path.exists(full_path):
+        return
+
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+    try:
+        img = Image.new('RGB', (1024, 1024), color=(128, 128, 128))
+        img.save(full_path, 'WEBP')
+        print(f"Created placeholder image at: {full_path}")
+    except Exception as e:
+        print(f"Error creating placeholder image {full_path}: {e}")
+
 
 def populate_products():
     print('Populating products...')
@@ -112,6 +137,21 @@ def populate_products():
         },
     ]
 
+    # Pre-create all possible placeholder images
+    all_avail_images = [
+        "products/newarrival1.webp", "products/newarrival2.webp",
+        "products/newarrival3.webp", "products/newarrival4.webp",
+        "products/cord1.webp", "products/cord2.webp",
+        "products/cord3.webp", "products/cord4.webp",
+        "products/suit1.webp", "products/suit2.webp",
+        "products/suit3.webp", "products/suit4.webp",
+        "products/bestseller1.webp", "products/bestseller2.webp",
+        "products/bestseller3.webp", "products/bestseller4.webp",
+    ]
+    print("Ensuring all product placeholder images exist...")
+    for image_path in all_avail_images:
+        ensure_placeholder_image(image_path)
+
     # Fetch existing/pre-populate Size, Color, Material
     sizes_db = list(Size.objects.all())
     if not sizes_db:
@@ -169,17 +209,6 @@ def populate_products():
         is_new_arr = "NEW ARRIVALS" in [c.upper() for c in category_names]
         is_best = "BESTSELLERS" in [c.upper() for c in category_names]
 
-        # Available detail images to sample from
-        all_avail_images = [
-            "products/newarrival1.webp", "products/newarrival2.webp",
-            "products/newarrival3.webp", "products/newarrival4.webp",
-            "products/cord1.webp", "products/cord2.webp",
-            "products/cord3.webp", "products/cord4.webp",
-            "products/suit1.webp", "products/suit2.webp",
-            "products/suit3.webp", "products/suit4.webp",
-            "products/bestseller1.webp", "products/bestseller2.webp",
-            "products/bestseller3.webp", "products/bestseller4.webp",
-        ]
         # Exclude current image from the pool to avoid duplicate detail images
         pool = [img for img in all_avail_images if img != product_data['image']]
         sampled = random.sample(pool, k=3)

@@ -1,11 +1,36 @@
 import os
 import django
+from PIL import Image
+from django.conf import settings
 
 # Set up Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pindhni.settings')
 django.setup()
 
 from api.models import Blog
+
+def ensure_placeholder_image(image_path):
+    """
+    Ensures a placeholder image exists at the given path relative to MEDIA_ROOT.
+    If not, it creates a simple placeholder image.
+    """
+    if not image_path:
+        return
+
+    full_path = os.path.join(settings.MEDIA_ROOT, image_path)
+
+    if os.path.exists(full_path):
+        return
+
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+
+    try:
+        img = Image.new('RGB', (1024, 1024), color=(128, 128, 128))
+        img.save(full_path, 'WEBP')
+        print(f"Created placeholder image at: {full_path}")
+    except Exception as e:
+        print(f"Error creating placeholder image {full_path}: {e}")
+
 
 def populate_blogs():
     print('Populating blogs...')
@@ -30,6 +55,8 @@ def populate_blogs():
     ]
 
     for blog_data in blogs_data:
+        # Ensure placeholder image exists before creating the object
+        ensure_placeholder_image(blog_data['image'])
         Blog.objects.create(**blog_data)
 
     print('Successfully populated blogs.')
