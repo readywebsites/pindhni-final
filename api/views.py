@@ -14,7 +14,7 @@ from .serializers import (
     SizeSerializer, ColorSerializer, MaterialSerializer, PolicySerializer
 )
 
-def index(request):
+def index(request, path=None):
     return render(request, 'index.html')
 
 class ProductList(generics.ListCreateAPIView):
