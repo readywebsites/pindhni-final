@@ -1,7 +1,7 @@
 import os
 import django
 import re
-from PIL import Image
+import shutil
 from django.conf import settings
 
 # Set up Django
@@ -11,27 +11,32 @@ django.setup()
 import random
 from api.models import Product, Category, Size, Color, Material, ProductSize
 
-def ensure_placeholder_image(image_path):
+def ensure_media_file_from_source(image_path_fragment):
     """
-    Ensures a placeholder image exists at the given path relative to MEDIA_ROOT.
-    If not, it creates a simple placeholder image.
+    Ensures an image exists at the given path in the media directory,
+    copying it from the source directory ('dist/images') if it doesn't exist.
     """
-    if not image_path:
+    if not image_path_fragment:
         return
 
-    full_path = os.path.join(settings.MEDIA_ROOT, image_path)
+    destination_path = os.path.join(settings.MEDIA_ROOT, image_path_fragment)
+    image_filename = os.path.basename(image_path_fragment)
+    source_path = os.path.join(settings.BASE_DIR, 'dist', 'images', image_filename)
 
-    if os.path.exists(full_path):
+    if os.path.exists(destination_path):
         return
 
-    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    if not os.path.exists(source_path):
+        print(f"Warning: Source image not found at '{source_path}'. Cannot copy.")
+        return
+
+    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
 
     try:
-        img = Image.new('RGB', (1024, 1024), color=(128, 128, 128))
-        img.save(full_path, 'WEBP')
-        print(f"Created placeholder image at: {full_path}")
+        shutil.copy2(source_path, destination_path)
+        print(f"Copied '{source_path}' to '{destination_path}'")
     except Exception as e:
-        print(f"Error creating placeholder image {full_path}: {e}")
+        print(f"Error copying file: {e}")
 
 
 def populate_products():
@@ -137,7 +142,7 @@ def populate_products():
         },
     ]
 
-    # Pre-create all possible placeholder images
+    # Pre-copy all possible product images from the source folder
     all_avail_images = [
         "products/newarrival1.webp", "products/newarrival2.webp",
         "products/newarrival3.webp", "products/newarrival4.webp",
@@ -148,9 +153,9 @@ def populate_products():
         "products/bestseller1.webp", "products/bestseller2.webp",
         "products/bestseller3.webp", "products/bestseller4.webp",
     ]
-    print("Ensuring all product placeholder images exist...")
+    print("Ensuring all product images are copied from source...")
     for image_path in all_avail_images:
-        ensure_placeholder_image(image_path)
+        ensure_media_file_from_source(image_path)
 
     # Fetch existing/pre-populate Size, Color, Material
     sizes_db = list(Size.objects.all())

@@ -1,6 +1,6 @@
 import os
 import django
-from PIL import Image
+import shutil
 from django.conf import settings
 
 # Set up Django
@@ -9,27 +9,32 @@ django.setup()
 
 from api.models import Blog
 
-def ensure_placeholder_image(image_path):
+def ensure_media_file_from_source(image_path_fragment):
     """
-    Ensures a placeholder image exists at the given path relative to MEDIA_ROOT.
-    If not, it creates a simple placeholder image.
+    Ensures an image exists at the given path in the media directory,
+    copying it from the source directory ('dist/images') if it doesn't exist.
     """
-    if not image_path:
+    if not image_path_fragment:
         return
 
-    full_path = os.path.join(settings.MEDIA_ROOT, image_path)
+    destination_path = os.path.join(settings.MEDIA_ROOT, image_path_fragment)
+    image_filename = os.path.basename(image_path_fragment)
+    source_path = os.path.join(settings.BASE_DIR, 'dist', 'images', image_filename)
 
-    if os.path.exists(full_path):
+    if os.path.exists(destination_path):
         return
 
-    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    if not os.path.exists(source_path):
+        print(f"Warning: Source image not found at '{source_path}'. Cannot copy.")
+        return
+
+    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
 
     try:
-        img = Image.new('RGB', (1024, 1024), color=(128, 128, 128))
-        img.save(full_path, 'WEBP')
-        print(f"Created placeholder image at: {full_path}")
+        shutil.copy2(source_path, destination_path)
+        print(f"Copied '{source_path}' to '{destination_path}'")
     except Exception as e:
-        print(f"Error creating placeholder image {full_path}: {e}")
+        print(f"Error copying file: {e}")
 
 
 def populate_blogs():
@@ -55,8 +60,8 @@ def populate_blogs():
     ]
 
     for blog_data in blogs_data:
-        # Ensure placeholder image exists before creating the object
-        ensure_placeholder_image(blog_data['image'])
+        # Ensure image is copied from the source folder
+        ensure_media_file_from_source(blog_data['image'])
         Blog.objects.create(**blog_data)
 
     print('Successfully populated blogs.')

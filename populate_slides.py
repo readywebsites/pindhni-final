@@ -1,6 +1,6 @@
 import os
 import django
-from PIL import Image
+import shutil
 from django.conf import settings
 
 # Set up Django
@@ -9,33 +9,32 @@ django.setup()
 
 from api.models import HeroSlide
 
-def ensure_placeholder_image(image_path):
+def ensure_media_file_from_source(image_path_fragment):
     """
-    Ensures a placeholder image exists at the given path relative to MEDIA_ROOT.
-    If not, it creates a simple placeholder image.
+    Ensures an image exists at the given path in the media directory,
+    copying it from the source directory ('dist/images') if it doesn't exist.
     """
-    if not image_path:
+    if not image_path_fragment:
         return
 
-    full_path = os.path.join(settings.MEDIA_ROOT, image_path)
+    destination_path = os.path.join(settings.MEDIA_ROOT, image_path_fragment)
+    image_filename = os.path.basename(image_path_fragment)
+    source_path = os.path.join(settings.BASE_DIR, 'dist', 'images', image_filename)
 
-    if os.path.exists(full_path):
+    if os.path.exists(destination_path):
         return
 
-    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    if not os.path.exists(source_path):
+        print(f"Warning: Source image not found at '{source_path}'. Cannot copy.")
+        return
+
+    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
 
     try:
-        # Use different dimensions for mobile images if needed
-        if 'mobile' in image_path:
-            width, height = 576, 1024
-        else:
-            width, height = 1920, 1080
-        
-        img = Image.new('RGB', (width, height), color=(128, 128, 128))
-        img.save(full_path, 'WEBP')
-        print(f"Created placeholder image at: {full_path}")
+        shutil.copy2(source_path, destination_path)
+        print(f"Copied '{source_path}' to '{destination_path}'")
     except Exception as e:
-        print(f"Error creating placeholder image {full_path}: {e}")
+        print(f"Error copying file: {e}")
 
 
 def populate_slides():
@@ -88,9 +87,9 @@ def populate_slides():
     ]
 
     for slide_data in slides_data:
-        # Ensure placeholder images exist before creating the object
-        ensure_placeholder_image(slide_data.get('image'))
-        ensure_placeholder_image(slide_data.get('mobile_image'))
+        # Ensure images are copied from the source folder
+        ensure_media_file_from_source(slide_data.get('image'))
+        ensure_media_file_from_source(slide_data.get('mobile_image'))
         HeroSlide.objects.create(**slide_data)
 
     print('Successfully populated hero slides.')
