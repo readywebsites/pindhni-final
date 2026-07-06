@@ -19,6 +19,5 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # The SPA catch-all route must be the last pattern.
-# It serves the index.html file for any URL that doesn't match one of the backend routes above.
-# Static files should be handled by the WhiteNoise middleware before this point.
-urlpatterns.append(re_path(r'.*', index, name='index'))
+# It excludes backend-specific paths from being handled by the frontend application.
+urlpatterns.append(re_path(r'^(?!(api/|admin/|ckeditor/|media/)).*$', index, name='index'))
