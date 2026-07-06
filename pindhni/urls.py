@@ -21,4 +21,4 @@ if settings.DEBUG:
 # The SPA catch-all route must be the last pattern.
 # It excludes backend-specific paths from being handled by the frontend application.
 # The '?' makes the trailing slash optional in the lookahead.
-urlpatterns.append(re_path(r'^(?!(api/?|admin/?|ckeditor/?|media/?)).*$', index, name='index'))
+urlpatterns.append(re_path(r'^(?!(api/?|admin/?|ckeditor/?|media/?|static/?)).*, index, name='index'))
