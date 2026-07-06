@@ -24,7 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),
     path('ckeditor/', include('ckeditor_uploader.urls')),
-    re_path(r'^(?!api/|admin/|ckeditor/|media/|assets/).*, index, name='index'),
+        re_path(r'^(?!(api/|admin/|ckeditor/|media/|assets/)).*', index, name='index'),
 ]
 
 if settings.DEBUG:
