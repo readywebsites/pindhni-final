@@ -1,8 +1,11 @@
 from django.db import models
 from django.utils.text import slugify
+from django.contrib.auth.models import User
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    is_active = models.BooleanField(default=True)
+    show_on_navbar = models.BooleanField(default=True)
 
     class Meta:
         verbose_name_plural = "categories"
@@ -105,16 +108,37 @@ class ComfortBeyondTimeSection(models.Model):
     def __str__(self):
         return self.title
 
+class Tag(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class BlogCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        verbose_name_plural = "blog categories"
+
+    def __str__(self):
+        return self.name
+
 class Blog(models.Model):
     title = models.CharField(max_length=200)
+    excerpt = models.TextField(blank=True)
     content = models.TextField()
     image = models.ImageField(upload_to='blogs/')
     published_date = models.DateTimeField(auto_now_add=True)
     slug = models.SlugField(unique=True, max_length=255, blank=True)
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    category = models.ForeignKey(BlogCategory, on_delete=models.SET_NULL, null=True, blank=True)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.title)
+        if not self.excerpt:
+            self.excerpt = ' '.join(self.content.split()[:20]) + '...'
         super().save(*args, **kwargs)
 
     class Meta:
@@ -250,3 +274,10 @@ class Policy(models.Model):
 
     def __str__(self):
         return self.title
+
+class Subscription(models.Model):
+    email = models.EmailField(unique=True)
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.email

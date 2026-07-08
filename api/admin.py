@@ -5,7 +5,7 @@ from ckeditor_uploader.widgets import CKEditorUploadingWidget
 from .models import (
     Product, Category, HeroSlide, ComfortBeyondTimeSection, Blog, Store, Feature,
     FooterSection, SocialLink, FooterMenu, FooterMenuItem, Announcement,
-    Size, Color, Material, ProductSize, Policy
+    Size, Color, Material, ProductSize, Policy, Subscription
 )
 
 # Forms with CKEditor
@@ -172,3 +172,9 @@ class PolicyAdmin(admin.ModelAdmin):
     form = PolicyAdminForm
     list_display = ('title', 'slug')
     prepopulated_fields = {'slug': ('title',)}
+
+@admin.register(Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('email', 'subscribed_at')
+    readonly_fields = ('subscribed_at',)
+

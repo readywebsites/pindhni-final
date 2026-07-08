@@ -5,13 +5,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import (
     Product, HeroSlide, Category, ComfortBeyondTimeSection, Blog, Store, Feature,
-    FooterSection, FooterMenu, Announcement, Size, Color, Material, Policy
+    FooterSection, FooterMenu, Announcement, Size, Color, Material, Policy, Tag, BlogCategory,
+    Subscription
 )
 from .serializers import (
     ProductSerializer, HeroSlideSerializer, CategorySerializer,
     ComfortBeyondTimeSectionSerializer, BlogSerializer, StoreSerializer, FeatureSerializer,
     FooterSectionSerializer, FooterMenuSerializer, AnnouncementSerializer,
-    SizeSerializer, ColorSerializer, MaterialSerializer, PolicySerializer
+    SizeSerializer, ColorSerializer, MaterialSerializer, PolicySerializer, SubscriptionSerializer
 )
 
 def index(request, path=None):
@@ -54,7 +55,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     """
     A simple ViewSet for viewing categories.
     """
-    queryset = Category.objects.all()
+    queryset = Category.objects.filter(is_active=True)
     serializer_class = CategorySerializer
 
 class ComfortBeyondTimeSectionDetail(generics.GenericAPIView):
@@ -77,6 +78,26 @@ class BlogViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Blog.objects.all()
     serializer_class = BlogSerializer
     lookup_field = 'slug'
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+
+        # Get related articles (by tags)
+        related_articles = Blog.objects.filter(tags__in=instance.tags.all()).exclude(id=instance.id).distinct()[:3]
+        data['related_articles'] = BlogSerializer(related_articles, many=True).data
+
+        # Get previous and next articles
+        previous_article = Blog.objects.filter(published_date__lt=instance.published_date).order_by('-published_date').first()
+        next_article = Blog.objects.filter(published_date__gt=instance.published_date).order_by('published_date').first()
+
+        if previous_article:
+            data['previous_article'] = {'slug': previous_article.slug, 'title': previous_article.title}
+        if next_article:
+            data['next_article'] = {'slug': next_article.slug, 'title': next_article.title}
+
+        return Response(data)
 
 class StoreViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -146,3 +167,11 @@ class PolicyViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Policy.objects.all()
     serializer_class = PolicySerializer
     lookup_field = 'slug'
+
+class SubscriptionViewSet(viewsets.ModelViewSet):
+    """
+    A simple ViewSet for viewing and creating subscriptions.
+    """
+    queryset = Subscription.objects.all()
+    serializer_class = SubscriptionSerializer
+

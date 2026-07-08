@@ -2,13 +2,13 @@ from rest_framework import serializers
 from .models import (
     Product, HeroSlide, Category, ComfortBeyondTimeSection, Blog, Store, Feature,
     FooterSection, SocialLink, FooterMenu, FooterMenuItem, Announcement,
-    Size, Color, Material, ProductSize, Policy
+    Size, Color, Material, ProductSize, Policy, Tag, BlogCategory, Subscription
 )
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'is_active', 'show_on_navbar']
 
 class SizeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -100,7 +100,21 @@ class ComfortBeyondTimeSectionSerializer(serializers.ModelSerializer):
         model = ComfortBeyondTimeSection
         fields = '__all__'
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['name']
+
+class BlogCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BlogCategory
+        fields = ['name']
+
 class BlogSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True, read_only=True)
+    author = serializers.StringRelatedField()
+    category = serializers.StringRelatedField()
+
     class Meta:
         model = Blog
         fields = '__all__'
@@ -150,4 +164,9 @@ class PolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = Policy
         fields = ['id', 'title', 'policy', 'slug']
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = '__all__'
 
